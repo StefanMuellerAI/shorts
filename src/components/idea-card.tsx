@@ -5,7 +5,7 @@ import { CategoryBadge } from "@/components/category-badge";
 import { Archive, Undo2, GripVertical, Trash2 } from "lucide-react";
 import { toggleIdeaStatus, deleteIdea } from "@/actions/ideas";
 import { useToast } from "@/components/toast";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 interface IdeaCardProps {
@@ -25,6 +25,8 @@ export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaC
   const router = useRouter();
   const isVorrat = idea.status === "VORRAT";
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function handleToggle() {
     try {
@@ -41,15 +43,21 @@ export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaC
   async function handleDelete() {
     if (!confirmDelete) {
       setConfirmDelete(true);
-      setTimeout(() => setConfirmDelete(false), 3000);
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+      confirmTimer.current = setTimeout(() => setConfirmDelete(false), 4000);
       return;
     }
+
+    if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    setDeleting(true);
     try {
       await deleteIdea(idea.id);
       toast("Idee geloescht.", "success");
       router.refresh();
     } catch {
       toast("Fehler beim Loeschen.", "error");
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   }
 
@@ -81,14 +89,16 @@ export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaC
         {showDelete && (
           <button
             onClick={handleDelete}
-            className={`flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95 ${
+            disabled={deleting}
+            className={`flex items-center justify-center gap-1 rounded-full transition active:scale-95 ${
               confirmDelete
-                ? "bg-red-500/20 text-red-400"
-                : "text-zinc-600 hover:bg-zinc-800 hover:text-red-400"
-            }`}
+                ? "bg-red-500/20 text-red-400 px-2.5 h-8 text-xs font-medium"
+                : "text-zinc-600 hover:bg-zinc-800 hover:text-red-400 h-8 w-8"
+            } ${deleting ? "opacity-50" : ""}`}
             title={confirmDelete ? "Nochmal tippen zum Loeschen" : "Loeschen"}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-3.5 w-3.5 shrink-0" />
+            {confirmDelete && <span>Loeschen?</span>}
           </button>
         )}
         <button
