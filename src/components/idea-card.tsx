@@ -2,22 +2,16 @@
 
 import Link from "next/link";
 import { CategoryBadge } from "@/components/category-badge";
-import { Check, Undo2, GripVertical } from "lucide-react";
+import { Archive, Undo2, GripVertical } from "lucide-react";
 import { toggleIdeaStatus } from "@/actions/ideas";
 import { useToast } from "@/components/toast";
-import { cn } from "@/lib/utils";
 
 interface IdeaCardProps {
   idea: {
     id: string;
     hook: string[];
-    kernaussage: string[];
-    sourceType: string;
-    sourceUrl: string | null;
     status: string;
-    createdAt: Date;
     category: { name: string; color: string } | null;
-    createdBy: { name: string };
   };
   draggable?: boolean;
   dragHandleProps?: Record<string, unknown>;
@@ -31,18 +25,18 @@ export function IdeaCard({ idea, draggable, dragHandleProps }: IdeaCardProps) {
     try {
       await toggleIdeaStatus(idea.id);
       toast(
-        isVorrat ? "Idee als abgedreht markiert!" : "Idee zurueck im Vorrat!",
+        isVorrat ? "Ins Archiv verschoben." : "Zurueck im Vorrat!",
         "success"
       );
     } catch {
-      toast("Fehler beim Aendern des Status.", "error");
+      toast("Fehler beim Verschieben.", "error");
     }
   }
 
   const hookPreview = idea.hook?.[0] || "Ohne Hook";
 
   return (
-    <div className="group relative flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-3 transition hover:border-zinc-700 hover:bg-zinc-900">
+    <div className="group flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-3 transition hover:border-zinc-700 hover:bg-zinc-900">
       {draggable && (
         <div
           {...dragHandleProps}
@@ -65,16 +59,15 @@ export function IdeaCard({ idea, draggable, dragHandleProps }: IdeaCardProps) {
 
       <button
         onClick={handleToggle}
-        className={cn(
-          "shrink-0 flex h-9 w-9 items-center justify-center rounded-full shadow-lg transition active:scale-95",
+        className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${
           isVorrat
-            ? "bg-emerald-600 text-white hover:bg-emerald-500"
+            ? "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
             : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-        )}
-        title={isVorrat ? "Als abgedreht markieren" : "Zurueck in den Vorrat"}
+        }`}
+        title={isVorrat ? "Ins Archiv verschieben" : "Zurueck in den Vorrat"}
       >
         {isVorrat ? (
-          <Check className="h-4 w-4" strokeWidth={3} />
+          <Archive className="h-4 w-4" />
         ) : (
           <Undo2 className="h-4 w-4" />
         )}

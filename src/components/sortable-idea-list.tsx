@@ -8,13 +8,9 @@ import { useToast } from "@/components/toast";
 interface Idea {
   id: string;
   hook: string[];
-  kernaussage: string[];
-  sourceType: string;
-  sourceUrl: string | null;
   status: string;
-  createdAt: Date;
   category: { name: string; color: string } | null;
-  createdBy: { name: string };
+  [key: string]: unknown;
 }
 
 export function SortableIdeaList({ ideas: initialIdeas }: { ideas: Idea[] }) {
