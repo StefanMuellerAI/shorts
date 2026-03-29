@@ -23,7 +23,7 @@ export async function getIdeasByStatusAndCategory(
       ...(categoryId ? { categoryId } : {}),
     },
     include: { category: true, createdBy: { select: { name: true } } },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
   });
 }
 
@@ -113,6 +113,21 @@ export async function updateIdea(id: string, formData: FormData) {
   revalidatePath("/");
   revalidatePath(`/idee/${id}`);
   return { success: true, id };
+}
+
+export async function reorderIdeas(orderedIds: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Nicht authentifiziert");
+
+  const updates = orderedIds.map((id, index) =>
+    prisma.shortIdea.update({
+      where: { id },
+      data: { sortOrder: index },
+    })
+  );
+
+  await prisma.$transaction(updates);
+  revalidatePath("/");
 }
 
 export async function toggleIdeaStatus(id: string) {

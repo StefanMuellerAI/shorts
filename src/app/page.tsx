@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { AppShell } from "@/components/app-shell";
-import { IdeaCard } from "@/components/idea-card";
 import { getIdeasByStatusAndCategory } from "@/actions/ideas";
 import { getCategoriesSimple } from "@/actions/categories";
 import { CategoryFilter } from "@/components/category-filter";
+import { SortableIdeaList } from "@/components/sortable-idea-list";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
@@ -52,11 +52,7 @@ export default async function VorratPage({ searchParams }: Props) {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
-          {ideas.map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} />
-          ))}
-        </div>
+        <SortableIdeaList ideas={ideas} />
       )}
     </AppShell>
   );
