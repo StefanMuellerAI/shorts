@@ -339,13 +339,13 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
         onChange={setKernaussage}
         placeholder="Zentrale Information..."
         minItems={1}
-        maxItems={5}
+        maxItems={10}
       >
         <VoiceInput
           onTranscription={(bullets) =>
             setKernaussage((prev) => {
               const filtered = prev.filter((s) => s.trim());
-              return [...filtered, ...bullets].slice(0, 5);
+              return [...filtered, ...bullets].slice(0, 10);
             })
           }
         />
@@ -358,7 +358,7 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
         onChange={setMeinTake}
         placeholder="Persoenliche Einordnung..."
         minItems={1}
-        maxItems={4}
+        maxItems={6}
       >
         <VoiceInput
           onTranscription={(bullets) =>
