@@ -27,6 +27,7 @@ export function BulletEditor({
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const touchItemRef = useRef<number | null>(null);
+  const dragImageRef = useRef<HTMLDivElement | null>(null);
 
   function updateItem(index: number, text: string) {
     const updated = [...items];
@@ -82,16 +83,24 @@ export function BulletEditor({
     }
   }
 
-  function handleDragStart(index: number) {
+  function handleGripDragStart(index: number, e: React.DragEvent) {
     setDragIndex(index);
+    const row = (e.target as HTMLElement).closest("[data-bullet-row]");
+    if (row) {
+      dragImageRef.current = row as HTMLDivElement;
+      e.dataTransfer.setDragImage(row, 0, 20);
+    }
+    e.dataTransfer.effectAllowed = "move";
   }
 
-  function handleDragOver(e: React.DragEvent, index: number) {
+  function handleRowDragOver(e: React.DragEvent, index: number) {
+    if (dragIndex === null) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     setOverIndex(index);
   }
 
-  function handleDrop(index: number) {
+  function handleRowDrop(index: number) {
     if (dragIndex !== null) {
       moveItem(dragIndex, index);
     }
@@ -104,16 +113,16 @@ export function BulletEditor({
     setOverIndex(null);
   }
 
-  function handleTouchStart(index: number, e: React.TouchEvent) {
+  function handleTouchStart(index: number) {
     touchItemRef.current = index;
     setDragIndex(index);
-    e.currentTarget.closest('[data-bullet-row]')?.classList.add('opacity-50');
   }
 
   function handleTouchMove(e: React.TouchEvent) {
     if (touchItemRef.current === null || !listRef.current) return;
+    e.preventDefault();
     const touch = e.touches[0];
-    const rows = listRef.current.querySelectorAll('[data-bullet-row]');
+    const rows = listRef.current.querySelectorAll("[data-bullet-row]");
     for (let i = 0; i < rows.length; i++) {
       const rect = rows[i].getBoundingClientRect();
       if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
@@ -127,11 +136,6 @@ export function BulletEditor({
     if (touchItemRef.current !== null && overIndex !== null) {
       moveItem(touchItemRef.current, overIndex);
     }
-    if (listRef.current) {
-      listRef.current.querySelectorAll('[data-bullet-row]').forEach(el =>
-        el.classList.remove('opacity-50')
-      );
-    }
     touchItemRef.current = null;
     setDragIndex(null);
     setOverIndex(null);
@@ -143,22 +147,17 @@ export function BulletEditor({
         <label className="block text-sm font-medium text-zinc-300">
           {label}
         </label>
-        <div className="flex items-center gap-1">
-          {children}
-        </div>
+        <div className="flex items-center gap-1">{children}</div>
       </div>
       <div ref={listRef} className="space-y-1.5">
         {items.map((item, index) => (
           <div
             key={index}
             data-bullet-row
-            draggable
-            onDragStart={() => handleDragStart(index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDrop={() => handleDrop(index)}
-            onDragEnd={handleDragEnd}
-            className={`flex items-center gap-1 transition-transform ${
-              dragIndex === index ? "opacity-50 scale-[0.98]" : ""
+            onDragOver={(e) => handleRowDragOver(e, index)}
+            onDrop={() => handleRowDrop(index)}
+            className={`flex items-center gap-1 transition-all ${
+              dragIndex === index ? "opacity-40 scale-[0.97]" : ""
             } ${
               overIndex === index && dragIndex !== index
                 ? "border-t-2 border-indigo-500 -mt-px pt-px"
@@ -166,14 +165,19 @@ export function BulletEditor({
             }`}
           >
             <div
-              className="shrink-0 cursor-grab touch-none text-zinc-700 hover:text-zinc-400 active:cursor-grabbing p-0.5"
-              onTouchStart={(e) => handleTouchStart(index, e)}
+              draggable
+              onDragStart={(e) => handleGripDragStart(index, e)}
+              onDragEnd={handleDragEnd}
+              onTouchStart={() => handleTouchStart(index)}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
+              className="shrink-0 cursor-grab touch-none text-zinc-700 hover:text-zinc-400 active:cursor-grabbing p-0.5"
             >
               <GripVertical className="h-4 w-4" />
             </div>
-            <span className="shrink-0 text-sm text-zinc-600 select-none">–</span>
+            <span className="shrink-0 text-sm text-zinc-600 select-none">
+              –
+            </span>
             <input
               data-bullet-group={label}
               value={item}
