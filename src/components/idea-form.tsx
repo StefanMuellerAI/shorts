@@ -112,6 +112,26 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
     }
   }
 
+  async function handlePasteFromClipboard() {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imageType = item.types.find((t) => t.startsWith("image/"));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          const file = new File([blob], `paste-${Date.now()}.png`, {
+            type: imageType,
+          });
+          handleUploadFile(file);
+          return;
+        }
+      }
+      toast("Kein Bild in der Zwischenablage gefunden.", "error");
+    } catch {
+      toast("Zugriff auf Zwischenablage nicht moeglich.", "error");
+    }
+  }
+
   function handleAiResult(result: {
     hook: string;
     kernaussage: string;
@@ -228,31 +248,38 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
               ref={dropZoneRef}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
-              className="rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-900/50 transition hover:border-zinc-600"
+              className="space-y-2"
             >
-              <label className="flex cursor-pointer flex-col items-center gap-2 px-4 py-8 text-center">
-                {uploading ? (
+              {uploading ? (
+                <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-900/50 px-4 py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-                ) : (
-                  <Upload className="h-8 w-8 text-zinc-500" />
-                )}
-                <span className="text-sm text-zinc-500">
-                  {uploading ? "Wird hochgeladen..." : "Screenshot hochladen"}
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-zinc-600">
-                  <Clipboard className="h-3 w-3" />
-                  Oder einfuegen mit Strg+V / Cmd+V
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleUploadFile(file);
-                  }}
-                />
-              </label>
+                  <span className="text-sm text-zinc-500">Wird hochgeladen...</span>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePasteFromClipboard}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-4 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700 hover:text-white active:scale-[0.98]"
+                  >
+                    <Clipboard className="h-5 w-5" />
+                    Einfuegen
+                  </button>
+                  <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-4 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700 hover:text-white active:scale-[0.98]">
+                    <Upload className="h-5 w-5" />
+                    Datei waehlen
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadFile(file);
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           )}
         </div>
