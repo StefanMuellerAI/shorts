@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createIdea, updateIdea } from "@/actions/ideas";
 import { MagicButton } from "@/components/magic-button";
@@ -11,6 +11,7 @@ import {
   Upload,
   Loader2,
   X,
+  Clipboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBlobDisplayUrl } from "@/lib/blob";
@@ -53,8 +54,37 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
   const [kernaussage, setKernaussage] = useState(initialData?.kernaussage || "");
   const [meinTake, setMeinTake] = useState(initialData?.meinTake || "");
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  async function handleUpload(file: File) {
+  const handlePasteOrDrop = useCallback(
+    (file: File) => {
+      if (file.type.startsWith("image/")) {
+        setSourceType("SCREENSHOT");
+        handleUploadFile(file);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) handlePasteOrDrop(file);
+          return;
+        }
+      }
+    }
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [handlePasteOrDrop]);
+
+  async function handleUploadFile(file: File) {
     setUploading(true);
     try {
       const formData = new FormData();
@@ -71,6 +101,14 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
       toast("Upload fehlgeschlagen.", "error");
     } finally {
       setUploading(false);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file?.type.startsWith("image/")) {
+      handleUploadFile(file);
     }
   }
 
@@ -186,25 +224,36 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
               </button>
             </div>
           ) : (
-            <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-900/50 px-4 py-8 text-center transition hover:border-zinc-600">
-              {uploading ? (
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-              ) : (
-                <Upload className="h-8 w-8 text-zinc-500" />
-              )}
-              <span className="text-sm text-zinc-500">
-                {uploading ? "Wird hochgeladen..." : "Screenshot hochladen"}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleUpload(file);
-                }}
-              />
-            </label>
+            <div
+              ref={dropZoneRef}
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-900/50 transition hover:border-zinc-600"
+            >
+              <label className="flex cursor-pointer flex-col items-center gap-2 px-4 py-8 text-center">
+                {uploading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+                ) : (
+                  <Upload className="h-8 w-8 text-zinc-500" />
+                )}
+                <span className="text-sm text-zinc-500">
+                  {uploading ? "Wird hochgeladen..." : "Screenshot hochladen"}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-zinc-600">
+                  <Clipboard className="h-3 w-3" />
+                  Oder einfuegen mit Strg+V / Cmd+V
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUploadFile(file);
+                  }}
+                />
+              </label>
+            </div>
           )}
         </div>
       )}
