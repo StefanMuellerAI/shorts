@@ -35,6 +35,7 @@ export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaC
         isVorrat ? "Ins Archiv verschoben." : "Zurueck im Vorrat!",
         "success"
       );
+      router.refresh();
     } catch {
       toast("Fehler beim Verschieben.", "error");
     }

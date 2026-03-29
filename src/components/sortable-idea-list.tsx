@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { IdeaCard } from "@/components/idea-card";
 import { reorderIdeas } from "@/actions/ideas";
 import { useToast } from "@/components/toast";
@@ -16,6 +16,10 @@ interface Idea {
 export function SortableIdeaList({ ideas: initialIdeas }: { ideas: Idea[] }) {
   const [ideas, setIdeas] = useState(initialIdeas);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setIdeas(initialIdeas);
+  }, [initialIdeas]);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const touchStartY = useRef(0);
