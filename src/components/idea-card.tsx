@@ -16,7 +16,7 @@ interface IdeaCardProps {
     sourceUrl: string | null;
     status: string;
     createdAt: Date;
-    category: { name: string; color: string };
+    category: { name: string; color: string } | null;
     createdBy: { name: string };
   };
 }
@@ -44,7 +44,11 @@ export function IdeaCard({ idea }: IdeaCardProps) {
     <div className="group relative rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 transition hover:border-zinc-700 hover:bg-zinc-900 animate-fade-in">
       <Link href={`/idee/${idea.id}`} className="block">
         <div className="mb-2 flex items-start justify-between gap-3">
-          <CategoryBadge name={idea.category.name} color={idea.category.color} />
+          {idea.category ? (
+            <CategoryBadge name={idea.category.name} color={idea.category.color} />
+          ) : (
+            <span className="text-xs text-zinc-600">Keine Kategorie</span>
+          )}
           <div className="flex items-center gap-1 text-zinc-600">
             {idea.sourceType === "LINK" ? (
               <ExternalLink className="h-3.5 w-3.5" />

@@ -60,8 +60,8 @@ export async function createIdea(formData: FormData) {
   const kernaussage = parseJsonArray(kernaussageRaw);
   const meinTake = parseJsonArray(meinTakeRaw);
 
-  if (hook.length === 0 || kernaussage.length === 0 || meinTake.length === 0 || !categoryId || !sourceType) {
-    throw new Error("Alle Pflichtfelder muessen ausgefuellt sein.");
+  if (hook.length === 0) {
+    throw new Error("Bitte gib mindestens einen Hook-Stichpunkt ein.");
   }
 
   await prisma.shortIdea.create({
@@ -69,8 +69,8 @@ export async function createIdea(formData: FormData) {
       hook,
       kernaussage,
       meinTake,
-      categoryId,
-      sourceType,
+      categoryId: categoryId || null,
+      sourceType: sourceType || "LINK",
       sourceUrl: sourceUrl || null,
       screenshotUrl: screenshotUrl || null,
       createdById: session.user.id,

@@ -31,7 +31,7 @@ interface IdeaFormProps {
     hook: string[];
     kernaussage: string[];
     meinTake: string[];
-    categoryId: string;
+    categoryId: string | null;
     sourceType: string;
     sourceUrl: string | null;
     screenshotUrl: string | null;
@@ -61,7 +61,7 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
   const [meinTake, setMeinTake] = useState<string[]>(
     initialData?.meinTake?.length ? initialData.meinTake : [""]
   );
-  const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
+  const [categoryId, setCategoryId] = useState(initialData?.categoryId ?? "");
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const handlePasteOrDrop = useCallback(
@@ -161,8 +161,8 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
       const filteredKern = kernaussage.filter((s) => s.trim());
       const filteredTake = meinTake.filter((s) => s.trim());
 
-      if (filteredHook.length === 0 || filteredKern.length === 0 || filteredTake.length === 0) {
-        toast("Bitte fuelle mindestens einen Stichpunkt pro Feld aus.", "error");
+      if (filteredHook.length === 0) {
+        toast("Bitte gib mindestens einen Hook-Stichpunkt ein.", "error");
         setSubmitting(false);
         return;
       }
@@ -171,7 +171,7 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
       formData.set("hook", JSON.stringify(filteredHook));
       formData.set("kernaussage", JSON.stringify(filteredKern));
       formData.set("meinTake", JSON.stringify(filteredTake));
-      formData.set("categoryId", categoryId);
+      formData.set("categoryId", categoryId || "");
       formData.set("sourceType", sourceType);
       formData.set("sourceUrl", sourceUrl);
       formData.set("screenshotUrl", screenshotUrl);
@@ -378,10 +378,9 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          required
           className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
         >
-          <option value="">Kategorie waehlen...</option>
+          <option value="">Keine Kategorie</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}

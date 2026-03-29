@@ -54,7 +54,9 @@ export default async function IdeaDetailPage({ params }: Props) {
 
       <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <CategoryBadge name={idea.category.name} color={idea.category.color} />
+          {idea.category && (
+            <CategoryBadge name={idea.category.name} color={idea.category.color} />
+          )}
           <span className="flex items-center gap-1 text-xs text-zinc-600">
             {idea.sourceType === "LINK" ? (
               <ExternalLink className="h-3 w-3" />

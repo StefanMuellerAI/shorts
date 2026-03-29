@@ -47,8 +47,8 @@ model ShortIdea {
   hook          String[]
   kernaussage   String[]
   meinTake      String[]
-  categoryId    String
-  category      Category   @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  category      Category?  @relation(fields: [categoryId], references: [id])
   sourceType    SourceType
   sourceUrl     String?
   screenshotUrl String?
