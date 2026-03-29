@@ -34,19 +34,33 @@ export async function getIdeaById(id: string) {
   });
 }
 
+function parseJsonArray(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter((s) => typeof s === "string" && s.trim());
+  } catch {
+    // not JSON
+  }
+  return raw.split("\n").map((s) => s.trim()).filter(Boolean);
+}
+
 export async function createIdea(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Nicht authentifiziert");
 
-  const hook = formData.get("hook") as string;
-  const kernaussage = formData.get("kernaussage") as string;
-  const meinTake = formData.get("meinTake") as string;
+  const hookRaw = formData.get("hook") as string;
+  const kernaussageRaw = formData.get("kernaussage") as string;
+  const meinTakeRaw = formData.get("meinTake") as string;
   const categoryId = formData.get("categoryId") as string;
   const sourceType = formData.get("sourceType") as SourceType;
   const sourceUrl = formData.get("sourceUrl") as string | null;
   const screenshotUrl = formData.get("screenshotUrl") as string | null;
 
-  if (!hook || !kernaussage || !meinTake || !categoryId || !sourceType) {
+  const hook = parseJsonArray(hookRaw);
+  const kernaussage = parseJsonArray(kernaussageRaw);
+  const meinTake = parseJsonArray(meinTakeRaw);
+
+  if (hook.length === 0 || kernaussage.length === 0 || meinTake.length === 0 || !categoryId || !sourceType) {
     throw new Error("Alle Pflichtfelder muessen ausgefuellt sein.");
   }
 
@@ -71,13 +85,17 @@ export async function updateIdea(id: string, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Nicht authentifiziert");
 
-  const hook = formData.get("hook") as string;
-  const kernaussage = formData.get("kernaussage") as string;
-  const meinTake = formData.get("meinTake") as string;
+  const hookRaw = formData.get("hook") as string;
+  const kernaussageRaw = formData.get("kernaussage") as string;
+  const meinTakeRaw = formData.get("meinTake") as string;
   const categoryId = formData.get("categoryId") as string;
   const sourceType = formData.get("sourceType") as SourceType;
   const sourceUrl = formData.get("sourceUrl") as string | null;
   const screenshotUrl = formData.get("screenshotUrl") as string | null;
+
+  const hook = parseJsonArray(hookRaw);
+  const kernaussage = parseJsonArray(kernaussageRaw);
+  const meinTake = parseJsonArray(meinTakeRaw);
 
   await prisma.shortIdea.update({
     where: { id },
@@ -117,4 +135,56 @@ export async function deleteIdea(id: string) {
   await prisma.shortIdea.delete({ where: { id } });
   revalidatePath("/");
   revalidatePath("/archiv");
+}
+
+export async function importIdeas(
+  ideas: {
+    hook: string[];
+    kernaussage: string[];
+    meinTake: string[];
+    category: string;
+    sourceType: string;
+    sourceUrl?: string;
+  }[]
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Nicht authentifiziert");
+
+  const categories = await prisma.category.findMany();
+  const results: { index: number; success: boolean; error?: string }[] = [];
+
+  for (let i = 0; i < ideas.length; i++) {
+    const idea = ideas[i];
+    try {
+      const cat = categories.find(
+        (c) => c.name.toLowerCase() === idea.category.toLowerCase()
+      );
+      if (!cat) {
+        results.push({ index: i, success: false, error: `Kategorie "${idea.category}" nicht gefunden` });
+        continue;
+      }
+
+      await prisma.shortIdea.create({
+        data: {
+          hook: idea.hook,
+          kernaussage: idea.kernaussage,
+          meinTake: idea.meinTake,
+          categoryId: cat.id,
+          sourceType: idea.sourceType === "SCREENSHOT" ? "SCREENSHOT" : "LINK",
+          sourceUrl: idea.sourceUrl || null,
+          createdById: session.user.id,
+        },
+      });
+      results.push({ index: i, success: true });
+    } catch (error) {
+      results.push({
+        index: i,
+        success: false,
+        error: error instanceof Error ? error.message : "Unbekannter Fehler",
+      });
+    }
+  }
+
+  revalidatePath("/");
+  return results;
 }

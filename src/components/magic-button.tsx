@@ -16,9 +16,9 @@ interface MagicButtonProps {
   screenshotUrl: string;
   categories: Category[];
   onResult: (result: {
-    hook: string;
-    kernaussage: string;
-    meinTake: string;
+    hook: string[];
+    kernaussage: string[];
+    meinTake: string[];
     categoryId?: string;
   }) => void;
   disabled?: boolean;

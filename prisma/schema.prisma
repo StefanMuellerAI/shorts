@@ -44,9 +44,9 @@ model Category {
 
 model ShortIdea {
   id            String     @id @default(cuid())
-  hook          String
-  kernaussage   String
-  meinTake      String
+  hook          String[]
+  kernaussage   String[]
+  meinTake      String[]
   categoryId    String
   category      Category   @relation(fields: [categoryId], references: [id])
   sourceType    SourceType
@@ -61,4 +61,10 @@ model ShortIdea {
   @@index([status])
   @@index([categoryId])
   @@index([createdById])
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Clapperboard, LogOut, Settings } from "lucide-react";
+import { Clapperboard, LogOut, Settings, FileJson, Sparkles, Users } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export function TopBar() {
@@ -65,8 +65,24 @@ export function TopBar() {
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800"
                   >
-                    <Settings className="h-4 w-4" />
+                    <Users className="h-4 w-4" />
                     Benutzer
+                  </Link>
+                  <Link
+                    href="/admin/einstellungen"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    KI-Prompt
+                  </Link>
+                  <Link
+                    href="/admin/import"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800"
+                  >
+                    <FileJson className="h-4 w-4" />
+                    Import
                   </Link>
                 </>
               )}

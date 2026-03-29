@@ -3,27 +3,19 @@ import { auth } from "@/lib/auth";
 import { get } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
+import { prisma } from "@/lib/prisma";
+import { DEFAULT_AI_PROMPT } from "@/lib/ai-prompt";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const SYSTEM_PROMPT = `Du bist ein Experte fuer Social-Media-Content, speziell fuer Short-Videos (TikTok, YouTube Shorts, Instagram Reels).
-
-Deine Aufgabe: Analysiere die gegebene Quelle (Website-Inhalt oder Bild) und erstelle daraus eine Short-Video-Idee mit folgenden Feldern:
-
-1. **Hook**: Ein packender erster Satz (1-2 Saetze), der sofort Aufmerksamkeit erregt und zum Weiterschauen motiviert. Direkt, provokant oder ueberraschend.
-2. **Kernaussage**: Die zentrale Information oder Botschaft des Shorts in 2-4 Saetzen. Was soll der Zuschauer lernen oder verstehen?
-3. **Mein Take**: Eine persoenliche Einordnung oder Meinung zum Thema in 2-3 Saetzen. Authentisch und meinungsstark.
-4. **Kategorie**: Waehle die passendste Kategorie aus der gegebenen Liste.
-
-Antworte IMMER als valides JSON im folgenden Format:
-{
-  "hook": "...",
-  "kernaussage": "...",
-  "meinTake": "...",
-  "categoryName": "..."
-}`;
+async function getSystemPrompt(): Promise<string> {
+  const setting = await prisma.setting.findUnique({
+    where: { key: "ai_prompt" },
+  });
+  return setting?.value || DEFAULT_AI_PROMPT;
+}
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -34,6 +26,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { sourceType, sourceUrl, screenshotUrl, categories } = body;
+
+    const systemPrompt = await getSystemPrompt();
 
     const categoryList = categories
       .map((c: { name: string }) => c.name)
@@ -126,7 +120,7 @@ export async function POST(request: NextRequest) {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [{ role: "user", content }],
     });
 
@@ -145,10 +139,16 @@ export async function POST(request: NextRequest) {
         c.name.toLowerCase() === result.categoryName?.toLowerCase()
     );
 
+    const ensureArray = (val: unknown): string[] => {
+      if (Array.isArray(val)) return val.map(String);
+      if (typeof val === "string") return val.split("\n").filter((s) => s.trim());
+      return [];
+    };
+
     return NextResponse.json({
-      hook: result.hook,
-      kernaussage: result.kernaussage,
-      meinTake: result.meinTake,
+      hook: ensureArray(result.hook),
+      kernaussage: ensureArray(result.kernaussage),
+      meinTake: ensureArray(result.meinTake),
       categoryId: matchedCategory?.id || null,
     });
   } catch (error) {

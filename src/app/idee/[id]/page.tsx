@@ -14,6 +14,20 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+function BulletList({ items }: { items: string[] }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item, i) => (
+        <li key={i} className="flex gap-2 text-sm text-zinc-300 leading-relaxed">
+          <span className="shrink-0 text-zinc-500">–</span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default async function IdeaDetailPage({ params }: Props) {
   const { id } = await params;
   const idea = await getIdeaById(id);
@@ -51,33 +65,29 @@ export default async function IdeaDetailPage({ params }: Props) {
           </span>
         </div>
 
-        <div>
-          <h1 className="text-xl font-bold text-white leading-snug">
-            {idea.hook}
-          </h1>
-        </div>
-
         <div className="space-y-4">
           <div>
-            <h2 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Kernaussage
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Hook
             </h2>
-            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-              {idea.kernaussage}
-            </p>
+            <BulletList items={idea.hook} />
           </div>
 
           <div>
-            <h2 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Kernaussage
+            </h2>
+            <BulletList items={idea.kernaussage} />
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Mein Take
             </h2>
-            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-              {idea.meinTake}
-            </p>
+            <BulletList items={idea.meinTake} />
           </div>
         </div>
 
-        {/* Source */}
         {idea.sourceType === "LINK" && idea.sourceUrl && (
           <a
             href={idea.sourceUrl}
@@ -100,7 +110,6 @@ export default async function IdeaDetailPage({ params }: Props) {
           </div>
         )}
 
-        {/* Meta */}
         <div className="flex items-center gap-3 text-xs text-zinc-600">
           <span>Von {idea.createdBy.name}</span>
           <span>·</span>
@@ -113,7 +122,6 @@ export default async function IdeaDetailPage({ params }: Props) {
           </span>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3 pt-2">
           <IdeaStatusToggle id={idea.id} status={idea.status} />
           <IdeaDeleteButton id={idea.id} />

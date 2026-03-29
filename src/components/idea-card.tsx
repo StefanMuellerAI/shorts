@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 interface IdeaCardProps {
   idea: {
     id: string;
-    hook: string;
-    kernaussage: string;
+    hook: string[];
+    kernaussage: string[];
     sourceType: string;
     sourceUrl: string | null;
     status: string;
@@ -37,6 +37,9 @@ export function IdeaCard({ idea }: IdeaCardProps) {
     }
   }
 
+  const hookPreview = idea.hook?.[0] || "Ohne Hook";
+  const bulletCount = idea.kernaussage?.length || 0;
+
   return (
     <div className="group relative rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 transition hover:border-zinc-700 hover:bg-zinc-900 animate-fade-in">
       <Link href={`/idee/${idea.id}`} className="block">
@@ -52,9 +55,11 @@ export function IdeaCard({ idea }: IdeaCardProps) {
         </div>
 
         <h3 className="mb-1 text-base font-semibold text-white leading-snug line-clamp-2">
-          {idea.hook}
+          {hookPreview}
         </h3>
-        <p className="text-sm text-zinc-400 line-clamp-2">{idea.kernaussage}</p>
+        <p className="text-xs text-zinc-500">
+          {bulletCount} {bulletCount === 1 ? "Punkt" : "Punkte"} Kernaussage
+        </p>
 
         <div className="mt-3 flex items-center justify-between text-xs text-zinc-600">
           <span>{idea.createdBy.name}</span>

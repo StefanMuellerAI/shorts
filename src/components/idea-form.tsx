@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createIdea, updateIdea } from "@/actions/ideas";
 import { MagicButton } from "@/components/magic-button";
+import { BulletEditor } from "@/components/bullet-editor";
+import { VoiceInput } from "@/components/voice-input";
 import { useToast } from "@/components/toast";
 import {
   Link as LinkIcon,
@@ -26,9 +28,9 @@ interface IdeaFormProps {
   categories: Category[];
   initialData?: {
     id: string;
-    hook: string;
-    kernaussage: string;
-    meinTake: string;
+    hook: string[];
+    kernaussage: string[];
+    meinTake: string[];
     categoryId: string;
     sourceType: string;
     sourceUrl: string | null;
@@ -50,9 +52,15 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const [hook, setHook] = useState(initialData?.hook || "");
-  const [kernaussage, setKernaussage] = useState(initialData?.kernaussage || "");
-  const [meinTake, setMeinTake] = useState(initialData?.meinTake || "");
+  const [hook, setHook] = useState<string[]>(
+    initialData?.hook?.length ? initialData.hook : [""]
+  );
+  const [kernaussage, setKernaussage] = useState<string[]>(
+    initialData?.kernaussage?.length ? initialData.kernaussage : [""]
+  );
+  const [meinTake, setMeinTake] = useState<string[]>(
+    initialData?.meinTake?.length ? initialData.meinTake : [""]
+  );
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -133,14 +141,14 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
   }
 
   function handleAiResult(result: {
-    hook: string;
-    kernaussage: string;
-    meinTake: string;
+    hook: string[];
+    kernaussage: string[];
+    meinTake: string[];
     categoryId?: string;
   }) {
-    setHook(result.hook);
-    setKernaussage(result.kernaussage);
-    setMeinTake(result.meinTake);
+    setHook(result.hook.length > 0 ? result.hook : [""]);
+    setKernaussage(result.kernaussage.length > 0 ? result.kernaussage : [""]);
+    setMeinTake(result.meinTake.length > 0 ? result.meinTake : [""]);
     if (result.categoryId) setCategoryId(result.categoryId);
   }
 
@@ -149,10 +157,20 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
     setSubmitting(true);
 
     try {
+      const filteredHook = hook.filter((s) => s.trim());
+      const filteredKern = kernaussage.filter((s) => s.trim());
+      const filteredTake = meinTake.filter((s) => s.trim());
+
+      if (filteredHook.length === 0 || filteredKern.length === 0 || filteredTake.length === 0) {
+        toast("Bitte fuelle mindestens einen Stichpunkt pro Feld aus.", "error");
+        setSubmitting(false);
+        return;
+      }
+
       const formData = new FormData();
-      formData.set("hook", hook);
-      formData.set("kernaussage", kernaussage);
-      formData.set("meinTake", meinTake);
+      formData.set("hook", JSON.stringify(filteredHook));
+      formData.set("kernaussage", JSON.stringify(filteredKern));
+      formData.set("meinTake", JSON.stringify(filteredTake));
       formData.set("categoryId", categoryId);
       formData.set("sourceType", sourceType);
       formData.set("sourceUrl", sourceUrl);
@@ -296,48 +314,61 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
       />
 
       {/* Hook */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-300">
-          Hook
-        </label>
-        <input
-          value={hook}
-          onChange={(e) => setHook(e.target.value)}
-          required
-          placeholder="Der erste Satz, der Aufmerksamkeit erzeugt..."
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+      <BulletEditor
+        label="Hook"
+        value={hook}
+        onChange={setHook}
+        placeholder="Aufmerksamkeit erzeugen..."
+        minItems={1}
+        maxItems={3}
+      >
+        <VoiceInput
+          onTranscription={(bullets) =>
+            setHook((prev) => {
+              const filtered = prev.filter((s) => s.trim());
+              return [...filtered, ...bullets].slice(0, 3);
+            })
+          }
         />
-      </div>
+      </BulletEditor>
 
       {/* Kernaussage */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-300">
-          Kernaussage
-        </label>
-        <textarea
-          value={kernaussage}
-          onChange={(e) => setKernaussage(e.target.value)}
-          required
-          rows={3}
-          placeholder="Die zentrale Information des Shorts..."
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 resize-none"
+      <BulletEditor
+        label="Kernaussage"
+        value={kernaussage}
+        onChange={setKernaussage}
+        placeholder="Zentrale Information..."
+        minItems={1}
+        maxItems={5}
+      >
+        <VoiceInput
+          onTranscription={(bullets) =>
+            setKernaussage((prev) => {
+              const filtered = prev.filter((s) => s.trim());
+              return [...filtered, ...bullets].slice(0, 5);
+            })
+          }
         />
-      </div>
+      </BulletEditor>
 
       {/* Mein Take */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-300">
-          Mein Take
-        </label>
-        <textarea
-          value={meinTake}
-          onChange={(e) => setMeinTake(e.target.value)}
-          required
-          rows={3}
-          placeholder="Deine persoenliche Meinung / Einordnung..."
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 resize-none"
+      <BulletEditor
+        label="Mein Take"
+        value={meinTake}
+        onChange={setMeinTake}
+        placeholder="Persoenliche Einordnung..."
+        minItems={1}
+        maxItems={4}
+      >
+        <VoiceInput
+          onTranscription={(bullets) =>
+            setMeinTake((prev) => {
+              const filtered = prev.filter((s) => s.trim());
+              return [...filtered, ...bullets].slice(0, 4);
+            })
+          }
         />
-      </div>
+      </BulletEditor>
 
       {/* Kategorie */}
       <div>
