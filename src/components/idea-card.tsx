@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { CategoryBadge } from "@/components/category-badge";
-import { Archive, Undo2, GripVertical } from "lucide-react";
-import { toggleIdeaStatus } from "@/actions/ideas";
+import { Archive, Undo2, GripVertical, Trash2 } from "lucide-react";
+import { toggleIdeaStatus, deleteIdea } from "@/actions/ideas";
 import { useToast } from "@/components/toast";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface IdeaCardProps {
   idea: {
@@ -14,12 +16,15 @@ interface IdeaCardProps {
     category: { name: string; color: string } | null;
   };
   draggable?: boolean;
+  showDelete?: boolean;
   dragHandleProps?: Record<string, unknown>;
 }
 
-export function IdeaCard({ idea, draggable, dragHandleProps }: IdeaCardProps) {
+export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaCardProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const isVorrat = idea.status === "VORRAT";
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   async function handleToggle() {
     try {
@@ -30,6 +35,21 @@ export function IdeaCard({ idea, draggable, dragHandleProps }: IdeaCardProps) {
       );
     } catch {
       toast("Fehler beim Verschieben.", "error");
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
+      return;
+    }
+    try {
+      await deleteIdea(idea.id);
+      toast("Idee geloescht.", "success");
+      router.refresh();
+    } catch {
+      toast("Fehler beim Loeschen.", "error");
     }
   }
 
@@ -57,21 +77,36 @@ export function IdeaCard({ idea, draggable, dragHandleProps }: IdeaCardProps) {
         </h3>
       </Link>
 
-      <button
-        onClick={handleToggle}
-        className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${
-          isVorrat
-            ? "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-            : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-        }`}
-        title={isVorrat ? "Ins Archiv verschieben" : "Zurueck in den Vorrat"}
-      >
-        {isVorrat ? (
-          <Archive className="h-4 w-4" />
-        ) : (
-          <Undo2 className="h-4 w-4" />
+      <div className="shrink-0 flex flex-col gap-1">
+        {showDelete && (
+          <button
+            onClick={handleDelete}
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95 ${
+              confirmDelete
+                ? "bg-red-500/20 text-red-400"
+                : "text-zinc-600 hover:bg-zinc-800 hover:text-red-400"
+            }`}
+            title={confirmDelete ? "Nochmal tippen zum Loeschen" : "Loeschen"}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         )}
-      </button>
+        <button
+          onClick={handleToggle}
+          className={`flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95 ${
+            isVorrat
+              ? "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+              : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+          }`}
+          title={isVorrat ? "Ins Archiv verschieben" : "Zurueck in den Vorrat"}
+        >
+          {isVorrat ? (
+            <Archive className="h-3.5 w-3.5" />
+          ) : (
+            <Undo2 className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export default async function ArchivPage({ searchParams }: Props) {
       ) : (
         <div className="space-y-3">
           {ideas.map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} />
+            <IdeaCard key={idea.id} idea={idea} showDelete />
           ))}
         </div>
       )}
