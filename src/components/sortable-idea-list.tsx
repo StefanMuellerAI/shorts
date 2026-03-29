@@ -26,6 +26,10 @@ export function SortableIdeaList({ ideas: initialIdeas }: { ideas: Idea[] }) {
   const touchCurrentItem = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  function removeIdea(id: string) {
+    setIdeas((prev) => prev.filter((i) => i.id !== id));
+  }
+
   const saveOrder = useCallback(
     async (newIdeas: Idea[]) => {
       try {
@@ -126,6 +130,7 @@ export function SortableIdeaList({ ideas: initialIdeas }: { ideas: Idea[] }) {
           <IdeaCard
             idea={idea}
             draggable
+            onRemove={removeIdea}
             dragHandleProps={{
               onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
             }}

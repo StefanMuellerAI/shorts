@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { AppShell } from "@/components/app-shell";
-import { IdeaCard } from "@/components/idea-card";
+import { ArchivIdeaList } from "@/components/archiv-idea-list";
 import { getIdeasByStatusAndCategory } from "@/actions/ideas";
 import { getCategoriesSimple } from "@/actions/categories";
 import { CategoryFilter } from "@/components/category-filter";
@@ -43,11 +43,7 @@ export default async function ArchivPage({ searchParams }: Props) {
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          {ideas.map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} showDelete />
-          ))}
-        </div>
+        <ArchivIdeaList ideas={ideas} />
       )}
     </AppShell>
   );

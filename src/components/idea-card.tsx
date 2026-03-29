@@ -17,10 +17,11 @@ interface IdeaCardProps {
   };
   draggable?: boolean;
   showDelete?: boolean;
+  onRemove?: (id: string) => void;
   dragHandleProps?: Record<string, unknown>;
 }
 
-export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaCardProps) {
+export function IdeaCard({ idea, draggable, showDelete, onRemove, dragHandleProps }: IdeaCardProps) {
   const { toast } = useToast();
   const router = useRouter();
   const isVorrat = idea.status === "VORRAT";
@@ -35,7 +36,11 @@ export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaC
         isVorrat ? "Ins Archiv verschoben." : "Zurueck im Vorrat!",
         "success"
       );
-      router.refresh();
+      if (onRemove) {
+        onRemove(idea.id);
+      } else {
+        router.refresh();
+      }
     } catch {
       toast("Fehler beim Verschieben.", "error");
     }
@@ -54,7 +59,11 @@ export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaC
     try {
       await deleteIdea(idea.id);
       toast("Idee geloescht.", "success");
-      router.refresh();
+      if (onRemove) {
+        onRemove(idea.id);
+      } else {
+        router.refresh();
+      }
     } catch {
       toast("Fehler beim Loeschen.", "error");
       setDeleting(false);
@@ -104,11 +113,7 @@ export function IdeaCard({ idea, draggable, showDelete, dragHandleProps }: IdeaC
         )}
         <button
           onClick={handleToggle}
-          className={`flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95 ${
-            isVorrat
-              ? "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-              : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-          }`}
+          className="flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
           title={isVorrat ? "Ins Archiv verschieben" : "Zurueck in den Vorrat"}
         >
           {isVorrat ? (
