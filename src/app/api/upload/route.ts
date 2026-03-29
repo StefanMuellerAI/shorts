@@ -16,8 +16,9 @@ export async function POST(request: NextRequest) {
   }
 
   const blob = await put(`screenshots/${Date.now()}-${file.name}`, file, {
-    access: "public",
+    access: "private",
+    contentType: file.type,
   });
 
-  return NextResponse.json({ url: blob.url });
+  return NextResponse.json({ url: blob.url, pathname: blob.pathname });
 }

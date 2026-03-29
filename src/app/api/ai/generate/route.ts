@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@/lib/auth";
+import { get } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 
 const anthropic = new Anthropic({
@@ -39,9 +40,14 @@ export async function POST(request: NextRequest) {
 
     const userPrompt = `Verfuegbare Kategorien: ${categoryList}\n\nErstelle eine Short-Video-Idee basierend auf dieser Quelle.`;
 
+    type ImageMediaType = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
+
     type ContentBlock =
       | { type: "text"; text: string }
-      | { type: "image"; source: { type: "url"; url: string } };
+      | {
+          type: "image";
+          source: { type: "base64"; media_type: ImageMediaType; data: string };
+        };
 
     const content: ContentBlock[] = [];
 
@@ -71,9 +77,15 @@ export async function POST(request: NextRequest) {
         });
       }
     } else if (sourceType === "SCREENSHOT" && screenshotUrl) {
+      const blobResult = await get(screenshotUrl, { access: "private" });
+      if (!blobResult) throw new Error("Screenshot nicht gefunden");
+      const arrayBuffer = await new Response(blobResult.stream).arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      const mediaType = (blobResult.blob.contentType || "image/png") as ImageMediaType;
+
       content.push({
         type: "image",
-        source: { type: "url", url: screenshotUrl },
+        source: { type: "base64", media_type: mediaType, data: base64 },
       });
       content.push({ type: "text", text: userPrompt });
     } else {

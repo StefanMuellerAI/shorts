@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { SourceType } from "@prisma/client";
 
 export async function getIdeasByStatus(status: "VORRAT" | "ABGEDREHT") {
@@ -65,7 +64,7 @@ export async function createIdea(formData: FormData) {
   });
 
   revalidatePath("/");
-  redirect("/");
+  return { success: true };
 }
 
 export async function updateIdea(id: string, formData: FormData) {
@@ -95,7 +94,7 @@ export async function updateIdea(id: string, formData: FormData) {
 
   revalidatePath("/");
   revalidatePath(`/idee/${id}`);
-  redirect(`/idee/${id}`);
+  return { success: true, id };
 }
 
 export async function toggleIdeaStatus(id: string) {

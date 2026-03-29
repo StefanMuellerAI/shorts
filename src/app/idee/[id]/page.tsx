@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, Image, Pencil } from "lucide-react";
 import { IdeaStatusToggle } from "@/components/idea-status-toggle";
 import { IdeaDeleteButton } from "@/components/idea-delete-button";
+import { getBlobDisplayUrl } from "@/lib/blob";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -92,7 +93,7 @@ export default async function IdeaDetailPage({ params }: Props) {
         {idea.sourceType === "SCREENSHOT" && idea.screenshotUrl && (
           <div className="overflow-hidden rounded-lg border border-zinc-800">
             <img
-              src={idea.screenshotUrl}
+              src={getBlobDisplayUrl(idea.screenshotUrl)}
               alt="Quelle Screenshot"
               className="w-full"
             />

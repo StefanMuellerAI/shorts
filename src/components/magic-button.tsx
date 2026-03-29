@@ -21,6 +21,7 @@ interface MagicButtonProps {
     meinTake: string;
     categoryId?: string;
   }) => void;
+  disabled?: boolean;
 }
 
 export function MagicButton({
@@ -29,6 +30,7 @@ export function MagicButton({
   screenshotUrl,
   categories,
   onResult,
+  disabled,
 }: MagicButtonProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -69,8 +71,8 @@ export function MagicButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={loading}
-      className="relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:shadow-indigo-500/40 active:scale-[0.98] disabled:opacity-60"
+      disabled={loading || disabled}
+      className="relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:shadow-indigo-500/40 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
     >
       {loading ? (
         <>
@@ -84,7 +86,7 @@ export function MagicButton({
           <Sparkles className="h-4 w-4 opacity-60" />
         </>
       )}
-      {!loading && (
+      {!loading && !disabled && (
         <div className="absolute inset-0 animate-shimmer pointer-events-none" />
       )}
     </button>

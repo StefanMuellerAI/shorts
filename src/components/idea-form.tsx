@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { createIdea, updateIdea } from "@/actions/ideas";
 import { MagicButton } from "@/components/magic-button";
 import { useToast } from "@/components/toast";
@@ -12,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getBlobDisplayUrl } from "@/lib/blob";
 
 interface Category {
   id: string;
@@ -35,6 +37,7 @@ interface IdeaFormProps {
 
 export function IdeaForm({ categories, initialData }: IdeaFormProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [sourceType, setSourceType] = useState<"LINK" | "SCREENSHOT">(
     (initialData?.sourceType as "LINK" | "SCREENSHOT") || "LINK"
@@ -62,7 +65,7 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
         setScreenshotUrl(data.url);
         toast("Screenshot hochgeladen!", "success");
       } else {
-        toast("Upload fehlgeschlagen.", "error");
+        toast(data.error || "Upload fehlgeschlagen.", "error");
       }
     } catch {
       toast("Upload fehlgeschlagen.", "error");
@@ -98,12 +101,20 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
       formData.set("screenshotUrl", screenshotUrl);
 
       if (initialData) {
-        await updateIdea(initialData.id, formData);
+        const result = await updateIdea(initialData.id, formData);
+        toast("Idee aktualisiert!", "success");
+        router.push(`/idee/${result.id}`);
       } else {
         await createIdea(formData);
+        toast("Idee gespeichert!", "success");
+        router.push("/");
       }
-    } catch {
-      toast("Fehler beim Speichern.", "error");
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Fehler beim Speichern.",
+        "error"
+      );
+    } finally {
       setSubmitting(false);
     }
   }
@@ -162,7 +173,7 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
           {screenshotUrl ? (
             <div className="relative overflow-hidden rounded-lg border border-zinc-800">
               <img
-                src={screenshotUrl}
+                src={getBlobDisplayUrl(screenshotUrl)}
                 alt="Screenshot"
                 className="max-h-48 w-full object-cover"
               />
@@ -199,15 +210,14 @@ export function IdeaForm({ categories, initialData }: IdeaFormProps) {
       )}
 
       {/* Magic Button */}
-      {sourceReady && (
-        <MagicButton
-          sourceType={sourceType}
-          sourceUrl={sourceUrl}
-          screenshotUrl={screenshotUrl}
-          categories={categories}
-          onResult={handleAiResult}
-        />
-      )}
+      <MagicButton
+        sourceType={sourceType}
+        sourceUrl={sourceUrl}
+        screenshotUrl={screenshotUrl}
+        categories={categories}
+        onResult={handleAiResult}
+        disabled={!sourceReady}
+      />
 
       {/* Hook */}
       <div>
