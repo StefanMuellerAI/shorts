@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@/lib/auth";
 import { get } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -79,9 +80,36 @@ export async function POST(request: NextRequest) {
     } else if (sourceType === "SCREENSHOT" && screenshotUrl) {
       const blobResult = await get(screenshotUrl, { access: "private" });
       if (!blobResult) throw new Error("Screenshot nicht gefunden");
-      const arrayBuffer = await new Response(blobResult.stream).arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString("base64");
-      const mediaType = (blobResult.blob.contentType || "image/png") as ImageMediaType;
+      const rawBuffer = Buffer.from(
+        await new Response(blobResult.stream).arrayBuffer()
+      );
+
+      const MAX_BASE64_SIZE = 5 * 1024 * 1024;
+      let imgBuffer: Buffer<ArrayBuffer> = rawBuffer;
+      let wasCompressed = false;
+
+      if (rawBuffer.length > MAX_BASE64_SIZE * 0.74) {
+        let quality = 80;
+        imgBuffer = await sharp(rawBuffer)
+          .rotate()
+          .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality, mozjpeg: true })
+          .toBuffer() as Buffer<ArrayBuffer>;
+        wasCompressed = true;
+
+        while (imgBuffer.length > MAX_BASE64_SIZE * 0.74 && quality > 20) {
+          quality -= 15;
+          imgBuffer = await sharp(rawBuffer)
+            .rotate()
+            .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+            .jpeg({ quality, mozjpeg: true })
+            .toBuffer() as Buffer<ArrayBuffer>;
+        }
+      }
+
+      const base64 = imgBuffer.toString("base64");
+      const mediaType: ImageMediaType =
+        wasCompressed ? "image/jpeg" : ((blobResult.blob.contentType || "image/jpeg") as ImageMediaType);
 
       content.push({
         type: "image",
