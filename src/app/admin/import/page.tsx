@@ -1,11 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { AppShell } from "@/components/app-shell";
+import { getCategoriesSimple } from "@/actions/categories";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ImportForm } from "@/components/admin/import-form";
 
-export default function ImportPage() {
+export default async function ImportPage() {
+  const categories = await getCategoriesSimple();
+
   return (
     <AppShell>
       <div className="mb-5 flex items-center gap-3">
@@ -18,7 +21,7 @@ export default function ImportPage() {
         <h1 className="text-xl font-bold text-white">JSON-Import</h1>
       </div>
 
-      <ImportForm />
+      <ImportForm categories={categories.map((c) => c.name)} />
     </AppShell>
   );
 }
