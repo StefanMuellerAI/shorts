@@ -22,15 +22,20 @@ interface ImportResult {
 
 interface ImportFormProps {
   categories: string[];
+  aiPrompt: string;
 }
 
-export function ImportForm({ categories }: ImportFormProps) {
+export function ImportForm({ categories, aiPrompt }: ImportFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ImportResult[] | null>(null);
   const [previewCount, setPreviewCount] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  const categoryEnum = categories.length > 0
+    ? categories.map((c) => `"${c}"`).join(" | ")
+    : "(keine Kategorien angelegt)";
 
   const sampleJson = JSON.stringify(
     [
@@ -47,14 +52,22 @@ export function ImportForm({ categories }: ImportFormProps) {
     2
   );
 
-  const categoryEnum = categories.length > 0
-    ? categories.map((c) => `"${c}"`).join(" | ")
-    : "(keine Kategorien angelegt)";
+  const promptText = `Ich brauche eine JSON-Datei mit mehreren Short-Video-Ideen. Jede Idee soll nach folgenden inhaltlichen Vorgaben erstellt werden:
 
-  const promptText = `Erstelle eine JSON-Datei mit Short-Video-Ideen im folgenden Format. Das Feld "category" MUSS exakt einen dieser Werte enthalten: ${categoryEnum}
+---
+${aiPrompt}
+---
 
-Format:
-${sampleJson}`;
+WICHTIG fuer das JSON-Format:
+- Das Ergebnis MUSS ein JSON-Array sein.
+- Das Feld "category" MUSS exakt einen dieser Werte enthalten: ${categoryEnum}
+- Das Feld "categoryName" aus dem Prompt oben heisst im JSON "category".
+- Felder "sourceType" (Wert "LINK") und "sourceUrl" (die Quell-URL) muessen enthalten sein.
+
+Beispiel fuer ein Element im Array:
+${sampleJson}
+
+Erstelle bitte [ANZAHL] Ideen basierend auf [DEINE QUELLEN/THEMEN].`;
 
   async function handleCopyPrompt() {
     await navigator.clipboard.writeText(promptText);
